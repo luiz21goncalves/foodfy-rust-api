@@ -4,6 +4,8 @@ use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+mod controllers;
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
