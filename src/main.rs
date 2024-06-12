@@ -17,7 +17,7 @@ async fn main() {
         )
         .layer(TraceLayer::new_for_http());
 
-    let port = std::env::var("PORT").expect("PORT must be set");
+    let port = std::env::var("PORT").ok().unwrap_or(String::from("3333"));
 
     let listener = TcpListener::bind(format!("0.0.0.0:{}", port))
         .await
