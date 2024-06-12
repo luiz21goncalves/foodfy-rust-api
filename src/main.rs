@@ -1,5 +1,6 @@
 use axum::{routing::get, Json, Router};
 use serde_json::json;
+use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -16,7 +17,11 @@ async fn main() {
         )
         .layer(TraceLayer::new_for_http());
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3333").await.unwrap();
+    let port = std::env::var("PORT").expect("PORT must be set");
+
+    let listener = TcpListener::bind(format!("0.0.0.0:{}", port))
+        .await
+        .unwrap();
     tracing::debug!(
         "http server listening on: {}",
         listener.local_addr().unwrap()
