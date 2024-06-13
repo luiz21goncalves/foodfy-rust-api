@@ -1,5 +1,5 @@
 services:
-    api:
+    app:
         build: .
         environment:
             PORT: 3333
@@ -10,3 +10,22 @@ services:
                 limits:
                     cpus: "0.5"
                     memory: "256MB"
+
+    postgres:
+        image: bitnami/postgresql:16.3.0
+        ports:
+            - 5432:5432
+        environment:
+            POSTGRESQL_USERNAME: docker
+            POSTGRESQL_PASSWORD: docker
+            POSTGRESQL_DATABASE: foodfy
+        volumes:
+            - foodfy_db_data:/bitnami/postgresql
+        deploy:
+            resources:
+                limits:
+                    cpus: "1"
+                    memory: "1GB"
+
+volumes:
+    foodfy_db_data:
