@@ -35,10 +35,12 @@ pub async fn api_status(State(pool): State<Pool<Postgres>>) -> Json<Status> {
         .server_version
         .unwrap();
 
+    let database_name = std::env::var("POSTGRES_DB").expect("cannot find POSTGRES_DB env");
+
     let opened_connections = sqlx::query_as!(
         Count,
         "SELECT count(*)::int FROM pg_stat_activity WHERE datname = $1;",
-        "foodfy",
+        database_name,
     )
     .fetch_one(&pool)
     .await

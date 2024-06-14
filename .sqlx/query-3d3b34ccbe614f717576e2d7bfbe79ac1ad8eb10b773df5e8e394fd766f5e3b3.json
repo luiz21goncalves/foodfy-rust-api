@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SHOW max_connections;",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "max_connections",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "3d3b34ccbe614f717576e2d7bfbe79ac1ad8eb10b773df5e8e394fd766f5e3b3"
+}
