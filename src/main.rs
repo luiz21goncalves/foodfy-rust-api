@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use axum::{routing::get, Router};
 use sqlx::postgres::PgPoolOptions;
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, signal};
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -29,6 +29,30 @@ async fn app() -> Router {
         .with_state(pool)
 }
 
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+}
+
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
@@ -46,5 +70,8 @@ async fn main() {
         "http server listening on: {}",
         listener.local_addr().unwrap()
     );
-    axum::serve(listener, app().await).await.unwrap()
+    axum::serve(listener, app().await)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap()
 }
