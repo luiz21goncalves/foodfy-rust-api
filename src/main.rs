@@ -1,6 +1,9 @@
+use std::time::Duration;
+
 use axum::{routing::get, Router};
 use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
+use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -19,7 +22,10 @@ async fn app() -> Router {
 
     Router::new()
         .nest("/v1", v1_routes)
-        .layer(TraceLayer::new_for_http())
+        .layer((
+            TraceLayer::new_for_http(),
+            TimeoutLayer::new(Duration::from_secs(10)),
+        ))
         .with_state(pool)
 }
 
