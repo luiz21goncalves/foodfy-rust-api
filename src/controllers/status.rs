@@ -1,9 +1,9 @@
 use axum::{extract::State, Json};
 use chrono::{DateTime, Utc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Database {
     version: String,
     max_connections: i32,
@@ -11,7 +11,7 @@ pub struct Database {
     pool_size: u32,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Status {
     version: String,
     updated_at: DateTime<Utc>,
@@ -72,4 +72,41 @@ pub async fn api_status(State(pool): State<Pool<Postgres>>) -> Json<Status> {
     };
 
     Json(status)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        app,
+        controllers::status::{Database, Status},
+    };
+    use axum::http::StatusCode;
+    use axum_test_helpers::TestClient;
+
+    #[tokio::test]
+    async fn get_api_status() {
+        let app = app().await;
+
+        let client = TestClient::new(app);
+        let response = client.get("/v1/status").await;
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.json::<Status>().await;
+
+        assert_eq!(
+            body.database,
+            Database {
+                max_connections: 100,
+                opened_connections: 2,
+                pool_size: 2,
+                version: String::from("16.3")
+            }
+        );
+        assert_eq!(body.version, String::from("0.0.0"));
+        assert_eq!(
+            body.updated_at.format("%Y-%m-%d %H:%M").to_string(),
+            chrono::Utc::now().format("%Y-%m-%d %H:%M").to_string()
+        );
+    }
 }
