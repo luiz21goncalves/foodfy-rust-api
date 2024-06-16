@@ -6,13 +6,8 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod controllers;
 
-#[tokio::main]
-async fn main() {
+async fn app() -> Router {
     dotenv::dotenv().ok();
-
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
-        .init();
 
     let database_url = std::env::var("DATABASE_URL").expect("cannot find DATABASE_URL env");
 
@@ -22,10 +17,19 @@ async fn main() {
 
     let v1_routes = Router::new().nest("/status", status_routes);
 
-    let app = Router::new()
+    Router::new()
         .nest("/v1", v1_routes)
         .layer(TraceLayer::new_for_http())
-        .with_state(pool);
+        .with_state(pool)
+}
+
+#[tokio::main]
+async fn main() {
+    dotenv::dotenv().ok();
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .init();
 
     let port = std::env::var("PORT").expect("cannot find PORT env");
 
@@ -36,5 +40,5 @@ async fn main() {
         "http server listening on: {}",
         listener.local_addr().unwrap()
     );
-    axum::serve(listener, app).await.unwrap()
+    axum::serve(listener, app().await).await.unwrap()
 }
