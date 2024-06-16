@@ -8,6 +8,7 @@ pub struct Database {
     version: String,
     max_connections: i32,
     opened_connections: i32,
+    pool_size: u32,
 }
 
 #[derive(Serialize)]
@@ -57,6 +58,8 @@ pub async fn api_status(State(pool): State<Pool<Postgres>>) -> Json<Status> {
         .parse::<i32>()
         .unwrap();
 
+    let pool_size = pool.size();
+
     let status = Status {
         version: env!("CARGO_PKG_VERSION").to_string(),
         updated_at: chrono::Utc::now(),
@@ -64,6 +67,7 @@ pub async fn api_status(State(pool): State<Pool<Postgres>>) -> Json<Status> {
             version: postgres_version,
             max_connections,
             opened_connections,
+            pool_size,
         },
     };
 
