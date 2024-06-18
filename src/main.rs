@@ -1,13 +1,13 @@
-use std::time::Duration;
-
-use axum::{routing::get, Router};
+use axum::Router;
 use sqlx::postgres::PgPoolOptions;
+use std::time::Duration;
 use tokio::{net::TcpListener, signal};
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod controllers;
+mod routes;
 
 async fn app() -> Router {
     dotenv::dotenv().ok();
@@ -16,12 +16,7 @@ async fn app() -> Router {
 
     let pool = PgPoolOptions::new().connect(&database_url).await.unwrap();
 
-    let status_routes = Router::new().route("/", get(controllers::status::api_status));
-
-    let v1_routes = Router::new().nest("/status", status_routes);
-
-    Router::new()
-        .nest("/v1", v1_routes)
+    routes::app_routes()
         .layer((
             TraceLayer::new_for_http(),
             TimeoutLayer::new(Duration::from_secs(10)),
@@ -66,10 +61,12 @@ async fn main() {
     let listener = TcpListener::bind(format!("0.0.0.0:{}", port))
         .await
         .unwrap();
+
     tracing::debug!(
         "http server listening on: {}",
         listener.local_addr().unwrap()
     );
+
     axum::serve(listener, app().await)
         .with_graceful_shutdown(shutdown_signal())
         .await
